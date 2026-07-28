@@ -1,7 +1,5 @@
 const MainContent = () => {
   return (
-    // flex-1 — bachi hui saari height le lo
-    // overflow-y-auto — agar content zyada ho toh scroll karo, bahar nahi jaayega
     <main className="flex-1 bg-slate-50 p-4 sm:p-6 overflow-y-auto">
 
   
