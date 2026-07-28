@@ -1,10 +1,10 @@
 import { useState } from "react";
-import Sidebar from "./components/SideBar";
+import Layout from "./components/Layout";
 
 function App() {
   return (
     <>
-      <Sidebar />
+      <Layout />
     </>
   );
 }
