@@ -1,13 +1,27 @@
 import { useState } from "react";
 
+
+// #A  Name: kam se kam 3 characters hone chahiye
+const isValidName = (val: string) => val.length === 0 || val.length >= 3;
+
+// #B  Email: @ aur . dono hone chahiye — regex se check
+const isValidEmail = (val: string) => val.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+
+// #C  Password: 8+ characters, 1 number, 1 uppercase
+const isValidPassword = (val: string) =>
+  val.length === 0 || (val.length >= 8 && /[0-9]/.test(val) && /[A-Z]/.test(val));
+
 const Setting = () => {
 
   // ── Profile state ──
-  const [name, setName]   = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole]   = useState("");
+  const [name, setName]         = useState("");
+  const [email, setEmail]       = useState("");
+  const [role, setRole]         = useState("");
+  const [password, setPassword] = useState("");
 
-  // ── Dropdown state default values set hain ──
+  const [touched, setTouched] = useState({ name: false, email: false, password: false });
+
+  // ── Dropdown state ──
   const [theme, setTheme]       = useState("light");
   const [language, setLanguage] = useState("en");
   const [timezone, setTimezone] = useState("UTC+5:30");
@@ -16,11 +30,27 @@ const Setting = () => {
   const [darkMode, setDarkMode]     = useState(false);
   const [emailNotif, setEmailNotif] = useState(false);
 
-  // Save button 
+  // ── Validation results — true = valid, false = error ──
+  const nameOk     = isValidName(name);
+  const emailOk    = isValidEmail(email);
+  const passwordOk = isValidPassword(password);
+
+  // #5 — Save button dabaya
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // page reload rokta hai
-    console.log({ name, email, role, theme, language, timezone, darkMode, emailNotif });
+    e.preventDefault();
+    setTouched({ name: true, email: true, password: true });
+    if (!nameOk || !emailOk || !passwordOk) return; // koi error hai toh rok do
+    // #6 — sab valid hai, console mein print
+    console.log({ name, email, role, password, theme, language, timezone, darkMode, emailNotif });
   };
+
+  // ── Reusable class logic ──
+  const inputClass = (isOk: boolean, isTouched: boolean) =>
+    `w-full px-3 py-2 text-sm rounded-lg outline-none transition-all placeholder:text-slate-300 border ${
+      !isOk && isTouched
+        ? "border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-400/20"
+        : "border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+    }`;
 
   return (
     <div className="space-y-4">
@@ -36,33 +66,43 @@ const Setting = () => {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
           <h3 className="text-sm font-semibold text-slate-700">Profile Details</h3>
 
+          {/* Name */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-500">Name</label>
-           
+          
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, name: true }))}
               placeholder="Enter your name"
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all placeholder:text-slate-300"
+              className={inputClass(nameOk, touched.name)}
             />
+            {!nameOk && touched.name && (
+              <p className="text-xs text-red-500 mt-0.5">Name must be at least 3 characters.</p>
+            )}
           </div>
 
+          {/* Email */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-500">Email</label>
-          
+         
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, email: true }))}
               placeholder="Enter your email"
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all placeholder:text-slate-300"
+              className={inputClass(emailOk, touched.email)}
             />
+            {!emailOk && touched.email && (
+              <p className="text-xs text-red-500 mt-0.5">Please enter a valid email address.</p>
+            )}
           </div>
 
+          {/* Role — no validation needed */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-500">Role</label>
-         
             <input
               type="text"
               value={role}
@@ -71,20 +111,38 @@ const Setting = () => {
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all placeholder:text-slate-300"
             />
           </div>
+
+          {/* Password */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-500">Password</label>
+           
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+              placeholder="Min 8 chars, 1 number, 1 uppercase"
+              className={inputClass(passwordOk, touched.password)}
+            />
+            {!passwordOk && touched.password && (
+              <p className="text-xs text-red-500 mt-0.5">
+                Min 8 characters, at least 1 uppercase letter and 1 number.
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* ─── Appearance & Locale Dropdowns ─── */}
+        {/* ─── Appearance & Locale ─── */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
           <h3 className="text-sm font-semibold text-slate-700">Appearance & Locale</h3>
 
-          {/* Theme Dropdown */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-500">Theme</label>
-        
+           
             <select
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all bg-white text-slate-700 cursor-pointer"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer"
             >
               <option value="light">Light</option>
               <option value="dark">Dark</option>
@@ -92,14 +150,12 @@ const Setting = () => {
             </select>
           </div>
 
-          {/* Language Dropdown */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-500">Language</label>
-      
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all bg-white text-slate-700 cursor-pointer"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer"
             >
               <option value="en">English</option>
               <option value="hi">Hindi</option>
@@ -108,14 +164,12 @@ const Setting = () => {
             </select>
           </div>
 
-          {/* Timezone Dropdown */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-500">Timezone</label>
-        
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all bg-white text-slate-700 cursor-pointer"
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer"
             >
               <option value="UTC+0">UTC+0 (London)</option>
               <option value="UTC+5:30">UTC+5:30 (India)</option>
@@ -130,13 +184,12 @@ const Setting = () => {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
           <h3 className="text-sm font-semibold text-slate-700">Preferences</h3>
 
-          {/* Dark Mode Toggle */}
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-700">Dark Mode</p>
               <p className="text-xs text-slate-400">Switch to dark theme</p>
             </div>
-          
+           
             <button
               type="button"
               onClick={() => setDarkMode(!darkMode)}
@@ -150,7 +203,6 @@ const Setting = () => {
             </button>
           </div>
 
-          {/* Email Notifications Checkbox */}
           <div className="flex items-center gap-3">
             <input
               id="emailNotif"
@@ -165,6 +217,7 @@ const Setting = () => {
           </div>
         </div>
 
+       
         <button
           type="submit"
           className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm px-6 py-2.5 rounded-xl font-medium transition-colors cursor-pointer shadow-sm shadow-blue-200"
