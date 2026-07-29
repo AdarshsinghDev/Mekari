@@ -44,9 +44,16 @@ const Setting = () => {
     console.log({ name, email, role, password, theme, language, timezone, darkMode, emailNotif });
   };
 
+  // sab valid + non-empty toh true — button enable hoga
+  const isFormValid =
+    name.length > 0 && nameOk &&
+    email.length > 0 && emailOk &&
+    password.length > 0 && passwordOk;
+
   // ── Reusable class logic ──
+  // transition-all duration-200 — border color smoothly change
   const inputClass = (isOk: boolean, isTouched: boolean) =>
-    `w-full px-3 py-2 text-sm rounded-lg outline-none transition-all placeholder:text-slate-300 border ${
+    `w-full px-3 py-2 text-sm rounded-lg outline-none transition-all duration-200 placeholder:text-slate-300 border ${
       !isOk && isTouched
         ? "border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-400/20"
         : "border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
@@ -78,9 +85,10 @@ const Setting = () => {
               placeholder="Enter your name"
               className={inputClass(nameOk, touched.name)}
             />
-            {!nameOk && touched.name && (
-              <p className="text-xs text-red-500 mt-0.5">Name must be at least 3 characters.</p>
-            )}
+            {/* error — opacity transition se fade in/out */}
+            <p className={`text-xs text-red-500 mt-0.5 transition-opacity duration-300 ${!nameOk && touched.name ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+              Name must be at least 3 characters.
+            </p>
           </div>
 
           {/* Email */}
@@ -95,9 +103,10 @@ const Setting = () => {
               placeholder="Enter your email"
               className={inputClass(emailOk, touched.email)}
             />
-            {!emailOk && touched.email && (
-              <p className="text-xs text-red-500 mt-0.5">Please enter a valid email address.</p>
-            )}
+            {/* error — fade in/out */}
+            <p className={`text-xs text-red-500 mt-0.5 transition-opacity duration-300 ${!emailOk && touched.email ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+              Please enter a valid email address.
+            </p>
           </div>
 
           {/* Role — no validation needed */}
@@ -124,11 +133,10 @@ const Setting = () => {
               placeholder="Min 8 chars, 1 number, 1 uppercase"
               className={inputClass(passwordOk, touched.password)}
             />
-            {!passwordOk && touched.password && (
-              <p className="text-xs text-red-500 mt-0.5">
-                Min 8 characters, at least 1 uppercase letter and 1 number.
-              </p>
-            )}
+            {/* error — fade in/out */}
+            <p className={`text-xs text-red-500 mt-0.5 transition-opacity duration-300 ${!passwordOk && touched.password ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+              Min 8 characters, at least 1 uppercase letter and 1 number.
+            </p>
           </div>
         </div>
 
@@ -217,10 +225,15 @@ const Setting = () => {
           </div>
         </div>
 
-       
+      
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm px-6 py-2.5 rounded-xl font-medium transition-colors cursor-pointer shadow-sm shadow-blue-200"
+          disabled={!isFormValid}
+          className={`text-white text-sm px-6 py-2.5 rounded-xl font-medium shadow-sm transition-all duration-300 ${
+            isFormValid
+              ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-blue-200 opacity-100 cursor-pointer"
+              : "bg-slate-300 opacity-60 cursor-not-allowed"
+          }`}
         >
           Save Changes
         </button>
