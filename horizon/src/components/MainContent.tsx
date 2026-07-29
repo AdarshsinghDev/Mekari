@@ -24,7 +24,7 @@ const MainContent = () => {
 
       </div>
     </main>
-  );
+  ); 
 };
 
 export default MainContent;
