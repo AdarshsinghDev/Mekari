@@ -1,52 +1,53 @@
+import type { ButtonVariant, ButtonSize } from "../types";
+
 // Button component — teen variants, teen sizes, disabled support
 
 type ButtonProps = {
-  // variant decide  button color/style
-  // primary = blue, secondary = gray bordered, danger = red
-  variant?: "primary" | "secondary" | "danger";
+  // Button ka color style
+  // "primary" = blue, "secondary" = gray/bordered, "danger" = red
+  variant?: ButtonVariant;
 
-  // size decide karta hai button kitna bada hoga
-  size?: "small" | "medium" | "large";
+  // Button kitna bada hoga
+  size?: ButtonSize;
 
-  // disabled = true karne pe button click nahi hoga
+  // true karo toh button click nahi hoga aur dim dikhega
   disabled?: boolean;
 
-  // button ke andar jo text ya element dikhana ho
+  // Button ke andar dikhne wala text ya element
   children: React.ReactNode;
 
-  // button ka type — "submit" form submit karta hai, "button" nahi karta
+  // "submit" = form submit karta hai, "button" = sirf click hota hai
   type?: "button" | "submit" | "reset";
 
-  // click hone pe kya karna hai
-  onClick?: () => void;
+  // Button click hone pe kya karna hai
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 
-  // extra CSS classes add karne ke liye (optional)
+  // Bahar se extra CSS dena ho toh (optional)
   className?: string;
 };
 
 const Button = ({
-  variant = "primary",    // default: blue button
-  size = "medium",        // default: medium size
-  disabled = false,       // default: button active hai
+  variant   = "primary",  // default: blue button
+  size      = "medium",   // default: medium size
+  disabled  = false,      // default: button active hai
   children,
-  type = "button",
+  type      = "button",
   onClick,
   className = "",
 }: ButtonProps) => {
 
+  // Variant ke hisaab se color classes decide karo
   let variantClass = "";
 
   if (variant === "primary") {
-    // Solid blue button
     variantClass = "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm shadow-blue-200";
   } else if (variant === "secondary") {
-    // White button with gray border
     variantClass = "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 active:bg-slate-100 shadow-sm";
   } else if (variant === "danger") {
-    // Red button for delete/cancel
     variantClass = "bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-sm shadow-red-200";
   }
 
+  // Size ke hisaab se padding decide karo
   let sizeClass = "";
 
   if (size === "small") {
@@ -57,9 +58,8 @@ const Button = ({
     sizeClass = "px-7 py-3 text-base rounded-xl";
   }
 
-  const disabledClass = disabled
-    ? "opacity-60 cursor-not-allowed"
-    : "cursor-pointer";
+  // Disabled hone pe alag cursor aur dim look
+  const disabledClass = disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer";
 
   return (
     <button
