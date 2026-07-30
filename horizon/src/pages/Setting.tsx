@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Button from "../components/Button";
 import Input from "../components/Input";
+import WorkspaceCard from "../components/WorkspaceCard";
 
 // ── Validators ────────────────────────────────────────────────────────────────
 
@@ -70,9 +71,7 @@ const Setting = () => {
       <form onSubmit={handleSubmit} className="space-y-5">
 
         {/* ─── Profile Details ─── */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-slate-700">Profile Details</h3>
-
+        <WorkspaceCard title="Profile Details">
           <Input
             id="name"
             label="Name"
@@ -95,7 +94,6 @@ const Setting = () => {
             error={!emailOk && touched.email ? "Please enter a valid email address." : undefined}
           />
 
-          {/* Role — no validation needed */}
           <Input
             id="role"
             label="Role"
@@ -119,12 +117,10 @@ const Setting = () => {
                 : undefined
             }
           />
-        </div>
+        </WorkspaceCard>
 
         {/* ─── Appearance & Locale ─── */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-slate-700">Appearance & Locale</h3>
-
+        <WorkspaceCard title="Appearance & Locale">
           <div className="space-y-1">
             <label htmlFor="theme" className="text-xs font-medium text-slate-500">Theme</label>
             <select
@@ -169,11 +165,10 @@ const Setting = () => {
               <option value="UTC+8">UTC+8 (Singapore)</option>
             </select>
           </div>
-        </div>
+        </WorkspaceCard>
 
         {/* ─── Preferences ─── */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-slate-700">Preferences</h3>
+        <WorkspaceCard title="Preferences">
 
           <div className="flex items-center justify-between">
             <div>
@@ -209,7 +204,7 @@ const Setting = () => {
               Email Notifications
             </label>
           </div>
-        </div>
+        </WorkspaceCard>
 
         {/* ─── Action Buttons ─── */}
         <div className="flex items-center gap-3">
