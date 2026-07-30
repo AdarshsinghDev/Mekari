@@ -3,13 +3,11 @@ import type { SettingFormData, UserPreferences, SelectOption } from "../types";
 
 export const initialProfile: SettingFormData = {
   name:     "Adarsh Singh",
-  email:    "adarsh@example.com",
+  email:    "adarshsingh10803@gmail.com",
   role:     "Frontend Developer",
-  password: "",           // password hamesha blank rakho — security best practice
+  password: "",        
 };
 
-// ── Pre-filled preferences data ──────────────────────────────
-// Toggle, theme, language — yeh sab initial values
 export const initialPreferences: UserPreferences = {
   theme:      "light",
   language:   "en",
