@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import WorkspaceCard from "../components/WorkspaceCard";
 import type { ThemeType, LanguageType, SelectOption } from "../types";
-
-// Mock data import — initial values aur dropdown options
 import {
   initialProfile,
   initialPreferences,
@@ -31,20 +29,17 @@ const isValidPassword = (val: string): boolean => {
 
 const Setting = () => {
 
-  // ── Profile state — mock data se initialize ho raha hai ─────
-  // useState("") ki jagah useState(initialProfile.name) —
-  // matlab form khulan pe "Adarsh Singh" pehle se bharaa dikhega
+  // ── Profile state ────────────────────────────────────────────
   const [name,     setName]     = useState(initialProfile.name);
   const [email,    setEmail]    = useState(initialProfile.email);
   const [role,     setRole]     = useState(initialProfile.role);
   const [password, setPassword] = useState(initialProfile.password);
 
-  // Touched state — validation ke liye, fresh start mein sab false
   const [nameTouched,     setNameTouched]     = useState(false);
   const [emailTouched,    setEmailTouched]    = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
 
-  // ── Preferences state — mock data se initialize ─────────────
+  // ── Preferences state ────────────────────────────────────────
   const [theme,      setTheme]      = useState<ThemeType>(initialPreferences.theme);
   const [language,   setLanguage]   = useState<LanguageType>(initialPreferences.language);
   const [timezone,   setTimezone]   = useState(initialPreferences.timezone);
@@ -56,24 +51,41 @@ const Setting = () => {
   const emailOk    = isValidEmail(email);
   const passwordOk = isValidPassword(password);
 
-  const isFormValid =
-    name.length > 0     && nameOk &&
-    email.length > 0    && emailOk &&
-    password.length > 0 && passwordOk;
+  // ── useMemo — isFormValid ────────────────────────────────────
+  // useMemo kya karta hai?
+  // Yeh calculation tab dobara calculate hogi jab
+  // name/email/password actually change honge.
+  // Agar koi aur state (jaise darkMode) change ho toh
+  // yeh calculation dobara NAHI chalegi — result cached rehta hai.
+  const isFormValid = useMemo(() => {
+    return (
+      name.length > 0     && nameOk &&
+      email.length > 0    && emailOk &&
+      password.length > 0 && passwordOk
+    );
+  }, [name, email, password, nameOk, emailOk, passwordOk]);
+  // ↑ dependency array — sirf yeh 6 cheezein badlengi toh recalculate hoga
 
-  // ── Handlers ─────────────────────────────────────────────────
+  // ── useCallback — handlers ────────────────────────────────────
+  // useCallback kya karta hai?
+  // Normally har re-render pe React ek naya function banata hai.
+  // useCallback purana function "yaad" rakhta hai —
+  // jab tak dependency nahi badalti, naya function nahi banega.
+  // Fayda: memo wrapped Input/Button ko naya function reference
+  // nahi milta → wo unnecessarily re-render nahi karte.
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     setNameTouched(true);
     setEmailTouched(true);
     setPasswordTouched(true);
     if (!nameOk || !emailOk || !passwordOk) return;
     console.log({ name, email, role, password, theme, language, timezone, darkMode, emailNotif });
-  };
+  }, [name, email, role, password, theme, language, timezone, darkMode, emailNotif, nameOk, emailOk, passwordOk]);
 
-  // Reset — mock data pe wapas le jaao (blank nahi, original data)
-  const handleReset = (_e: React.MouseEvent<HTMLButtonElement>): void => {
+  // Reset — [] dependency = yeh function kabhi nahi badlega
+  // Kyunki iske andar sirf setters hain jo React guarantee karta hai stable rehenge
+  const handleReset = useCallback((_e: React.MouseEvent<HTMLButtonElement>): void => {
     setName(initialProfile.name);
     setEmail(initialProfile.email);
     setRole(initialProfile.role);
@@ -81,27 +93,80 @@ const Setting = () => {
     setNameTouched(false);
     setEmailTouched(false);
     setPasswordTouched(false);
-  };
+  }, []); // empty array = ek baar banta hai, hamesha same rehta hai
 
-  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+  // Name/Email/Role/Password handlers — sirf setter call, dependency nahi
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
+    setName(e.target.value);
+  }, []);
+
+  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
+    setEmail(e.target.value);
+  }, []);
+
+  const handleRoleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
+    setRole(e.target.value);
+  }, []);
+
+  const handlePasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
+    setPassword(e.target.value);
+  }, []);
+
+  // Blur handlers
+  const handleNameBlur = useCallback((): void => {
+    setNameTouched(true);
+  }, []);
+
+  const handleEmailBlur = useCallback((): void => {
+    setEmailTouched(true);
+  }, []);
+
+  const handlePasswordBlur = useCallback((): void => {
+    setPasswordTouched(true);
+  }, []);
+
+  // Dropdown handlers
+  const handleThemeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>): void => {
     setTheme(e.target.value as ThemeType);
-  };
+  }, []);
 
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+  const handleLanguageChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>): void => {
     setLanguage(e.target.value as LanguageType);
-  };
+  }, []);
 
-  const handleTimezoneChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+  const handleTimezoneChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>): void => {
     setTimezone(e.target.value);
-  };
+  }, []);
 
-  const handleDarkModeToggle = (_e: React.MouseEvent<HTMLButtonElement>): void => {
-    setDarkMode(!darkMode);
-  };
+  const handleDarkModeToggle = useCallback((_e: React.MouseEvent<HTMLButtonElement>): void => {
+    setDarkMode((prev) => !prev);
+  }, []);
 
-  const handleEmailNotifChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleEmailNotifChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
     setEmailNotif(e.target.checked);
-  };
+  }, []);
+
+  // ── useMemo — dropdown JSX ───────────────────────────────────
+  // Dropdown options kabhi nahi badlte (static data hai).
+  // useMemo se yeh JSX ek baar banta hai aur cache mein rehta hai.
+  // Har re-render pe dobara map() nahi chalega.
+  const themeOptionElements = useMemo(() => (
+    themeOptions.map((option: SelectOption) => (
+      <option key={option.value} value={option.value}>{option.label}</option>
+    ))
+  ), []); // empty array = ek baar hi banao, kabhi mat badlo
+
+  const languageOptionElements = useMemo(() => (
+    languageOptions.map((option: SelectOption) => (
+      <option key={option.value} value={option.value}>{option.label}</option>
+    ))
+  ), []);
+
+  const timezoneOptionElements = useMemo(() => (
+    timezoneOptions.map((option: SelectOption) => (
+      <option key={option.value} value={option.value}>{option.label}</option>
+    ))
+  ), []);
 
   // ── JSX ──────────────────────────────────────────────────────
 
@@ -115,7 +180,7 @@ const Setting = () => {
 
       <form onSubmit={handleSubmit} className="space-y-5">
 
-        {/* ─── Profile Details — <Input/> components use ho rahe hain ─── */}
+        {/* Profile Details */}
         <WorkspaceCard title="Profile Details">
 
           <Input
@@ -123,8 +188,8 @@ const Setting = () => {
             label="Name"
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => setNameTouched(true)}
+            onChange={handleNameChange}
+            onBlur={handleNameBlur}
             placeholder="Enter your name"
             error={!nameOk && nameTouched ? "Name must be at least 3 characters." : undefined}
           />
@@ -134,8 +199,8 @@ const Setting = () => {
             label="Email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onBlur={() => setEmailTouched(true)}
+            onChange={handleEmailChange}
+            onBlur={handleEmailBlur}
             placeholder="Enter your email"
             error={!emailOk && emailTouched ? "Please enter a valid email address." : undefined}
           />
@@ -145,7 +210,7 @@ const Setting = () => {
             label="Role"
             type="text"
             value={role}
-            onChange={(e) => setRole(e.target.value)}
+            onChange={handleRoleChange}
             placeholder="e.g. Developer, Designer"
           />
 
@@ -154,18 +219,17 @@ const Setting = () => {
             label="Password"
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onBlur={() => setPasswordTouched(true)}
+            onChange={handlePasswordChange}
+            onBlur={handlePasswordBlur}
             placeholder="Min 8 chars, 1 number, 1 uppercase"
             error={!passwordOk && passwordTouched ? "Min 8 characters, at least 1 uppercase and 1 number." : undefined}
           />
 
         </WorkspaceCard>
 
-        {/* ─── Appearance & Locale — dropdowns mock data se render ho rahe hain ─── */}
+        {/* Appearance & Locale */}
         <WorkspaceCard title="Appearance & Locale">
 
-          {/* Theme dropdown — themeOptions array se options bana rahe hain */}
           <div className="space-y-1">
             <label htmlFor="theme" className="text-xs font-medium text-slate-500">Theme</label>
             <select
@@ -174,16 +238,10 @@ const Setting = () => {
               onChange={handleThemeChange}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer"
             >
-              {/* themeOptions array ka har item ek <option> ban raha hai */}
-              {themeOptions.map((option: SelectOption) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {themeOptionElements}
             </select>
           </div>
 
-          {/* Language dropdown — languageOptions array se */}
           <div className="space-y-1">
             <label htmlFor="language" className="text-xs font-medium text-slate-500">Language</label>
             <select
@@ -192,15 +250,10 @@ const Setting = () => {
               onChange={handleLanguageChange}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer"
             >
-              {languageOptions.map((option: SelectOption) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {languageOptionElements}
             </select>
           </div>
 
-          {/* Timezone dropdown — timezoneOptions array se */}
           <div className="space-y-1">
             <label htmlFor="timezone" className="text-xs font-medium text-slate-500">Timezone</label>
             <select
@@ -209,17 +262,13 @@ const Setting = () => {
               onChange={handleTimezoneChange}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer"
             >
-              {timezoneOptions.map((option: SelectOption) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {timezoneOptionElements}
             </select>
           </div>
 
         </WorkspaceCard>
 
-        {/* ─── Preferences ─── */}
+        {/* Preferences */}
         <WorkspaceCard title="Preferences">
 
           <div className="flex items-center justify-between">
@@ -258,7 +307,7 @@ const Setting = () => {
 
         </WorkspaceCard>
 
-        {/* ─── Action Buttons — <Button/> component use ho raha hai ─── */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-3">
           <Button type="submit" variant="primary" size="medium" disabled={!isFormValid}>
             Save Changes

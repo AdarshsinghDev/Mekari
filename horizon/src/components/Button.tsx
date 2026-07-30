@@ -1,44 +1,32 @@
+import { memo } from "react";
 import type { ButtonVariant, ButtonSize } from "../types";
 
-// Button component — teen variants, teen sizes, disabled support
-
 type ButtonProps = {
-  // Button ka color style
-  // "primary" = blue, "secondary" = gray/bordered, "danger" = red
-  variant?: ButtonVariant;
-
-  // Button kitna bada hoga
-  size?: ButtonSize;
-
-  // true karo toh button click nahi hoga aur dim dikhega
-  disabled?: boolean;
-
-  // Button ke andar dikhne wala text ya element
-  children: React.ReactNode;
-
-  // "submit" = form submit karta hai, "button" = sirf click hota hai
-  type?: "button" | "submit" | "reset";
-
-  // Button click hone pe kya karna hai
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-
-  // Bahar se extra CSS dena ho toh (optional)
+  variant?:   ButtonVariant;
+  size?:      ButtonSize;
+  disabled?:  boolean;
+  children:   React.ReactNode;
+  type?:      "button" | "submit" | "reset";
+  onClick?:   (e: React.MouseEvent<HTMLButtonElement>) => void;
   className?: string;
 };
 
-const Button = ({
-  variant   = "primary",  // default: blue button
-  size      = "medium",   // default: medium size
-  disabled  = false,      // default: button active hai
+// ─── memo kya karta hai? ──────────────────────────────────────
+// Parent re-render hone pe Button dobara render NAHI hoga —
+// jab tak iski koi prop actually change na ho.
+// Jaise: Name field mein type karo → Button ke props nahi badle
+// → Button skip ho jaata hai, dobara render nahi karta.
+const Button = memo(({
+  variant   = "primary",
+  size      = "medium",
+  disabled  = false,
   children,
   type      = "button",
   onClick,
   className = "",
 }: ButtonProps) => {
 
-  // Variant ke hisaab se color classes decide karo
   let variantClass = "";
-
   if (variant === "primary") {
     variantClass = "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm shadow-blue-200";
   } else if (variant === "secondary") {
@@ -47,9 +35,7 @@ const Button = ({
     variantClass = "bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-sm shadow-red-200";
   }
 
-  // Size ke hisaab se padding decide karo
   let sizeClass = "";
-
   if (size === "small") {
     sizeClass = "px-3 py-1.5 text-xs rounded-lg";
   } else if (size === "medium") {
@@ -58,7 +44,6 @@ const Button = ({
     sizeClass = "px-7 py-3 text-base rounded-xl";
   }
 
-  // Disabled hone pe alag cursor aur dim look
   const disabledClass = disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer";
 
   return (
@@ -71,6 +56,9 @@ const Button = ({
       {children}
     </button>
   );
-};
+});
+
+// DevTools mein component ka naam dikhega — warna "memo" dikhta
+Button.displayName = "Button";
 
 export default Button;

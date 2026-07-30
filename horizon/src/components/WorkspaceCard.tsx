@@ -1,20 +1,22 @@
-// WorkspaceCard — reusable card container with title, description, content
+import { memo } from "react";
 
 type WorkspaceCardProps = {
-  title?: string;
-
+  title?:       string;
   description?: string;
-
-  children: React.ReactNode;
-
-  footer?: React.ReactNode;
+  children:     React.ReactNode;
+  footer?:      React.ReactNode;
 };
 
-const WorkspaceCard = ({ title, description, children, footer }: WorkspaceCardProps) => {
+// ─── memo kya karta hai yahan? ────────────────────────────────
+// Setting page mein 3 WorkspaceCard hain.
+// Jab "Name" field mein type karo:
+//   - "Profile Details" card ke children badle → re-render ✅ (zaroori)
+//   - "Appearance" card ke title/description/footer nahi badle
+//     → memo usse skip karta hai ✅ (unnecessary render bachaya)
+const WorkspaceCard = memo(({ title, description, children, footer }: WorkspaceCardProps) => {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
 
-      {/* Title aur Description*/}
       {(title || description) && (
         <div className="mb-4">
           {title && (
@@ -26,12 +28,10 @@ const WorkspaceCard = ({ title, description, children, footer }: WorkspaceCardPr
         </div>
       )}
 
-      {/* Main Content */}
       <div className="space-y-4">
         {children}
       </div>
 
-      {/* Footer */}
       {footer && (
         <div className="mt-5 pt-5 border-t border-slate-100">
           {footer}
@@ -40,6 +40,8 @@ const WorkspaceCard = ({ title, description, children, footer }: WorkspaceCardPr
 
     </div>
   );
-};
+});
+
+WorkspaceCard.displayName = "WorkspaceCard";
 
 export default WorkspaceCard;
