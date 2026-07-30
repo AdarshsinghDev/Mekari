@@ -2,21 +2,27 @@ import { useState } from "react";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import WorkspaceCard from "../components/WorkspaceCard";
-import type { ThemeType, LanguageType } from "../types";
+import type { ThemeType, LanguageType, SelectOption } from "../types";
+
+// Mock data import — initial values aur dropdown options
+import {
+  initialProfile,
+  initialPreferences,
+  themeOptions,
+  languageOptions,
+  timezoneOptions,
+} from "../data/settingsMock";
 
 // ─── Validators ───────────────────────────────────────────────
 
-// Name: kam se kam 3 characters hone chahiye
 const isValidName = (val: string): boolean => {
   return val.length === 0 || val.length >= 3;
 };
 
-// Email: @ aur . dono hone chahiye
 const isValidEmail = (val: string): boolean => {
   return val.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 };
 
-// Password: 8+ chars, 1 number, 1 uppercase
 const isValidPassword = (val: string): boolean => {
   return val.length === 0 || (val.length >= 8 && /[0-9]/.test(val) && /[A-Z]/.test(val));
 };
@@ -25,89 +31,79 @@ const isValidPassword = (val: string): boolean => {
 
 const Setting = () => {
 
-  // ── Profile fields ──────────────────────────────────────────
-  const [name, setName]         = useState("");
-  const [email, setEmail]       = useState("");
-  const [role, setRole]         = useState("");
-  const [password, setPassword] = useState("");
+  // ── Profile state — mock data se initialize ho raha hai ─────
+  // useState("") ki jagah useState(initialProfile.name) —
+  // matlab form khulan pe "Adarsh Singh" pehle se bharaa dikhega
+  const [name,     setName]     = useState(initialProfile.name);
+  const [email,    setEmail]    = useState(initialProfile.email);
+  const [role,     setRole]     = useState(initialProfile.role);
+  const [password, setPassword] = useState(initialProfile.password);
 
-  // Kaunsa field user ne touch kiya — validation sirf touched fields pe dikhegi
+  // Touched state — validation ke liye, fresh start mein sab false
   const [nameTouched,     setNameTouched]     = useState(false);
   const [emailTouched,    setEmailTouched]    = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
 
-  // ── Appearance & Locale ─────────────────────────────────────
-  const [theme,    setTheme]    = useState<ThemeType>("light");
-  const [language, setLanguage] = useState<LanguageType>("en");
-  const [timezone, setTimezone] = useState("UTC+5:30");
+  // ── Preferences state — mock data se initialize ─────────────
+  const [theme,      setTheme]      = useState<ThemeType>(initialPreferences.theme);
+  const [language,   setLanguage]   = useState<LanguageType>(initialPreferences.language);
+  const [timezone,   setTimezone]   = useState(initialPreferences.timezone);
+  const [darkMode,   setDarkMode]   = useState(initialPreferences.darkMode);
+  const [emailNotif, setEmailNotif] = useState(initialPreferences.emailNotif);
 
-  // ── Preferences ─────────────────────────────────────────────
-  const [darkMode,   setDarkMode]   = useState(false);
-  const [emailNotif, setEmailNotif] = useState(false);
-
-  // ── Validation results ──────────────────────────────────────
+  // ── Validation ───────────────────────────────────────────────
   const nameOk     = isValidName(name);
   const emailOk    = isValidEmail(email);
   const passwordOk = isValidPassword(password);
 
-  // Save button tab hi enable hoga jab sab fields bhari hों aur valid hون
   const isFormValid =
     name.length > 0     && nameOk &&
     email.length > 0    && emailOk &&
     password.length > 0 && passwordOk;
 
-  // ── Handlers ────────────────────────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────
 
-  // Form submit hone pe
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
-    e.preventDefault(); // page reload rokta hai
-    // Sab fields ko touched mark karo taaki errors dikhen
+    e.preventDefault();
     setNameTouched(true);
     setEmailTouched(true);
     setPasswordTouched(true);
-    // Koi error ho toh rukk jao
     if (!nameOk || !emailOk || !passwordOk) return;
-    // Sab theek hai — console mein print karo
     console.log({ name, email, role, password, theme, language, timezone, darkMode, emailNotif });
   };
 
-  // Reset button — saare fields khali karo
+  // Reset — mock data pe wapas le jaao (blank nahi, original data)
   const handleReset = (_e: React.MouseEvent<HTMLButtonElement>): void => {
-    setName("");
-    setEmail("");
-    setRole("");
-    setPassword("");
+    setName(initialProfile.name);
+    setEmail(initialProfile.email);
+    setRole(initialProfile.role);
+    setPassword(initialProfile.password);
     setNameTouched(false);
     setEmailTouched(false);
     setPasswordTouched(false);
   };
 
-  // Theme dropdown change
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     setTheme(e.target.value as ThemeType);
   };
 
-  // Language dropdown change
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     setLanguage(e.target.value as LanguageType);
   };
 
-  // Timezone dropdown change
   const handleTimezoneChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     setTimezone(e.target.value);
   };
 
-  // Dark mode toggle button
   const handleDarkModeToggle = (_e: React.MouseEvent<HTMLButtonElement>): void => {
     setDarkMode(!darkMode);
   };
 
-  // Email notification checkbox
   const handleEmailNotifChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setEmailNotif(e.target.checked);
   };
 
-  // ── JSX ─────────────────────────────────────────────────────
+  // ── JSX ──────────────────────────────────────────────────────
 
   return (
     <div className="space-y-4">
@@ -119,7 +115,7 @@ const Setting = () => {
 
       <form onSubmit={handleSubmit} className="space-y-5">
 
-        {/* ─── Profile Details ─── */}
+        {/* ─── Profile Details — <Input/> components use ho rahe hain ─── */}
         <WorkspaceCard title="Profile Details">
 
           <Input
@@ -166,9 +162,10 @@ const Setting = () => {
 
         </WorkspaceCard>
 
-        {/* ─── Appearance & Locale ─── */}
+        {/* ─── Appearance & Locale — dropdowns mock data se render ho rahe hain ─── */}
         <WorkspaceCard title="Appearance & Locale">
 
+          {/* Theme dropdown — themeOptions array se options bana rahe hain */}
           <div className="space-y-1">
             <label htmlFor="theme" className="text-xs font-medium text-slate-500">Theme</label>
             <select
@@ -177,12 +174,16 @@ const Setting = () => {
               onChange={handleThemeChange}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer"
             >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="system">System Default</option>
+              {/* themeOptions array ka har item ek <option> ban raha hai */}
+              {themeOptions.map((option: SelectOption) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Language dropdown — languageOptions array se */}
           <div className="space-y-1">
             <label htmlFor="language" className="text-xs font-medium text-slate-500">Language</label>
             <select
@@ -191,13 +192,15 @@ const Setting = () => {
               onChange={handleLanguageChange}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer"
             >
-              <option value="en">English</option>
-              <option value="hi">Hindi</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
+              {languageOptions.map((option: SelectOption) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Timezone dropdown — timezoneOptions array se */}
           <div className="space-y-1">
             <label htmlFor="timezone" className="text-xs font-medium text-slate-500">Timezone</label>
             <select
@@ -206,11 +209,11 @@ const Setting = () => {
               onChange={handleTimezoneChange}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer"
             >
-              <option value="UTC+0">UTC+0 (London)</option>
-              <option value="UTC+5:30">UTC+5:30 (India)</option>
-              <option value="UTC-5">UTC-5 (New York)</option>
-              <option value="UTC-8">UTC-8 (Los Angeles)</option>
-              <option value="UTC+8">UTC+8 (Singapore)</option>
+              {timezoneOptions.map((option: SelectOption) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -219,7 +222,6 @@ const Setting = () => {
         {/* ─── Preferences ─── */}
         <WorkspaceCard title="Preferences">
 
-          {/* Dark Mode toggle */}
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-700">Dark Mode</p>
@@ -241,7 +243,6 @@ const Setting = () => {
             </button>
           </div>
 
-          {/* Email Notifications checkbox */}
           <div className="flex items-center gap-3">
             <input
               id="emailNotif"
@@ -257,7 +258,7 @@ const Setting = () => {
 
         </WorkspaceCard>
 
-        {/* ─── Action Buttons ─── */}
+        {/* ─── Action Buttons — <Button/> component use ho raha hai ─── */}
         <div className="flex items-center gap-3">
           <Button type="submit" variant="primary" size="medium" disabled={!isFormValid}>
             Save Changes

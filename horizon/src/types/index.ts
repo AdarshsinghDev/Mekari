@@ -54,7 +54,13 @@ export type UserPreferences = {
 
 // Sidebar ke ek nav link ka structure
 export type NavItem = {
-  label: string;        
-  path:  string;         // URL — "/dashboard"
+  label: string;
+  path:  string;          // URL — "/dashboard"
   icon:  React.ReactNode; // React icon component
+};
+
+// Ek dropdown option ka structure — label dikhta hai, value save hota hai
+export type SelectOption = {
+  label: string; // User ko dikhne wala text — "Light", "Hindi"
+  value: string; // Actually save hone wali value — "light", "hi"
 };
