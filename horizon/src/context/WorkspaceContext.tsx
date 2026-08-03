@@ -2,63 +2,51 @@ import { createContext, useContext, useEffect, useReducer } from "react";
 import type { SettingFormData, UserPreferences } from "../types";
 import { initialProfile, initialPreferences } from "../data/settingsMock";
 import { logger } from "../utils/logger";
+import {
+  updateProfileAction,
+  updatePreferencesAction,
+  resetProfileAction,
+} from "../store/actions";
 
-// ─── State shape ──────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────
 type WorkspaceState = {
   profile:     SettingFormData;
   preferences: UserPreferences;
 };
 
-// Starting state — fresh copy banao, direct reference nahi
-// Kyun copy? Agar direct initialProfile use karein, toh ek jagah badalne se
-// doosri jagah bhi badal jaata — unsafe reference sharing
+// Fresh copies — direct reference nahi (safe)
 const initialWorkspaceState: WorkspaceState = {
-  profile:     { ...initialProfile     }, // shallow copy — safe
-  preferences: { ...initialPreferences }, // shallow copy — safe
+  profile:     { ...initialProfile     },
+  preferences: { ...initialPreferences },
 };
 
-// ─── Actions ──────────────────────────────────────────────────
-// Har action ek named operation hai — random state mutation nahi
-// Partial<T> = us type ke kuch hi fields dene ka option
-
+// ─── Action types ─────────────────────────────────────────────
+// Action creators se types nikaal rahe hain — ek jagah defined
 type WorkspaceAction =
-  | { type: "UPDATE_PROFILE";     payload: Partial<SettingFormData> }
-  | { type: "UPDATE_PREFERENCES"; payload: Partial<UserPreferences> }
-  | { type: "RESET_PROFILE" };
+  | ReturnType<typeof updateProfileAction>
+  | ReturnType<typeof updatePreferencesAction>
+  | ReturnType<typeof resetProfileAction>;
 
 // ─── Reducer ──────────────────────────────────────────────────
-// Pure function — state mutate nahi karta, nayi copy banata hai
-
 function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
 
     case "UPDATE_PROFILE":
       return {
-        ...state,                          // baaki state safe
-        profile: {
-          ...state.profile,                // purana profile copy
-          ...action.payload,               // sirf jo fields aaye wahi overwrite
-        },
+        ...state,
+        profile: { ...state.profile, ...action.payload },
       };
-      // Example: payload = { name: "Ravi" }
-      // result.profile = { name: "Ravi", email: "old", role: "old", password: "old" }
 
     case "UPDATE_PREFERENCES":
       return {
         ...state,
-        preferences: {
-          ...state.preferences,            // purani preferences copy
-          ...action.payload,               // sirf jo fields aaye wahi overwrite
-        },
+        preferences: { ...state.preferences, ...action.payload },
       };
 
     case "RESET_PROFILE":
       return {
         ...state,
-        // Fresh copy banao — initialProfile ka direct reference nahi
-        // Agar direct dete: state.profile === initialProfile (same object)
-        // Reset ke baad profile change karte toh initialProfile bhi change ho jaata
-        profile: { ...initialProfile },
+        profile: { ...initialProfile }, // fresh copy — safe
       };
 
     default:
@@ -80,24 +68,39 @@ export const WorkspaceProvider = ({ children }: { children: React.ReactNode }) =
 
   const [state, dispatch] = useReducer(workspaceReducer, initialWorkspaceState);
 
-  // App mount hone pe ek baar initial state log karo
+  // Mount pe initial state log
   useEffect(() => {
     logger.group("WorkspaceContext — Initial State");
     logger.log("profile",     state.profile);
     logger.log("preferences", state.preferences);
     logger.groupEnd();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ← intentionally empty — sirf mount pe log karo
+  }, []);
 
-  // Clean action dispatch functions — components ko reducer pata nahi hoga
+  // State subscription — profile ya preferences badlne pe log karo
+  // [state.profile] → sirf profile badlne pe chalega
+  useEffect(() => {
+    logger.group("WorkspaceContext — Profile Changed");
+    logger.log("profile", state.profile);
+    logger.groupEnd();
+  }, [state.profile]);
+
+  // [state.preferences] → sirf preferences badlne pe chalega
+  useEffect(() => {
+    logger.group("WorkspaceContext — Preferences Changed");
+    logger.log("preferences", state.preferences);
+    logger.groupEnd();
+  }, [state.preferences]);
+
+  // Action creators use karo — uniform dispatch pattern
   const updateProfile     = (data: Partial<SettingFormData>) =>
-    dispatch({ type: "UPDATE_PROFILE",     payload: data });
+    dispatch(updateProfileAction(data));
 
   const updatePreferences = (data: Partial<UserPreferences>) =>
-    dispatch({ type: "UPDATE_PREFERENCES", payload: data });
+    dispatch(updatePreferencesAction(data));
 
   const resetProfile = () =>
-    dispatch({ type: "RESET_PROFILE" });
+    dispatch(resetProfileAction());
 
   return (
     <WorkspaceContext.Provider value={{

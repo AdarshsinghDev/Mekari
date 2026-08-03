@@ -1,48 +1,32 @@
 import { createContext, useContext, useEffect, useReducer } from "react";
 import { logger } from "../utils/logger";
+import { openSidebarAction, closeSidebarAction } from "../store/actions";
 
-// ─── State shape ──────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────
 type UIState = {
   isSidebarOpen: boolean;
 };
 
-// Starting state — sidebar band
 const initialUIState: UIState = {
   isSidebarOpen: false,
 };
 
-// ─── Actions ──────────────────────────────────────────────────
-// Action = ek object jo batata hai "kya karna hai"
-// type field batata hai kaunsa kaam — sirf yahi allowed hain
+// ─── Action types ─────────────────────────────────────────────
+// ReturnType<typeof fn> = us function ka return type TypeScript se nikalta hai
+// Har action creator se type leke union banate hain
 type UIAction =
-  | { type: "OPEN_SIDEBAR"  }
-  | { type: "CLOSE_SIDEBAR" };
+  | ReturnType<typeof openSidebarAction>
+  | ReturnType<typeof closeSidebarAction>;
 
 // ─── Reducer ──────────────────────────────────────────────────
-// Reducer = pure function
-// Pure function ka matlab:
-//   - same input → hamesha same output
-//   - state directly mutate NAHI karta — nayi copy banata hai
-//   - koi side effect nahi (API call, console.log etc.)
-//
-// Arguments:
-//   state  = current state (read only)
-//   action = kya karna hai
-// Returns: naya state object (copy)
-
+// Pure function — state mutate nahi karta, nayi copy banata hai
 function uiReducer(state: UIState, action: UIAction): UIState {
   switch (action.type) {
-
     case "OPEN_SIDEBAR":
-      // state.isSidebarOpen = true  ← GALAT — direct mutation
       return { ...state, isSidebarOpen: true };
-      //        ↑ purana state copy   ↑ sirf yeh field badlo
-
     case "CLOSE_SIDEBAR":
       return { ...state, isSidebarOpen: false };
-
     default:
-      // Koi unknown action aaye — state as-is wapas karo
       return state;
   }
 }
@@ -58,23 +42,27 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 // ─── Provider ─────────────────────────────────────────────────
 export const UIProvider = ({ children }: { children: React.ReactNode }) => {
 
-  // useReducer — useState ki jagah
-  // state   = current UI state
-  // dispatch = action bhejne ka function
   const [state, dispatch] = useReducer(uiReducer, initialUIState);
 
-  // App mount hone pe ek baar initial state log karo
-  // [] dependency = sirf ek baar chalega — mount pe
+  // Mount pe initial state log
   useEffect(() => {
     logger.group("UIContext — Initial State");
     logger.log("isSidebarOpen", state.isSidebarOpen);
     logger.groupEnd();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ← intentionally empty — sirf mount pe log karo
+  }, []);
 
-  // dispatch ko seedha expose nahi karte — clean functions banate hain
-  const openSidebar  = () => dispatch({ type: "OPEN_SIDEBAR"  });
-  const closeSidebar = () => dispatch({ type: "CLOSE_SIDEBAR" });
+  // State subscription — state badlne pe log karo
+  // [state] dependency — jab bhi state badle, yeh chalega
+  useEffect(() => {
+    logger.group("UIContext — State Changed");
+    logger.log("isSidebarOpen", state.isSidebarOpen);
+    logger.groupEnd();
+  }, [state]);
+
+  // Action creators use karo — seedha object likhne ki jagah
+  const openSidebar  = () => dispatch(openSidebarAction());
+  const closeSidebar = () => dispatch(closeSidebarAction());
 
   return (
     <UIContext.Provider value={{ ...state, openSidebar, closeSidebar }}>
