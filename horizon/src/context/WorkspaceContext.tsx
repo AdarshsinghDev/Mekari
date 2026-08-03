@@ -1,63 +1,97 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useReducer } from "react";
 import type { SettingFormData, UserPreferences } from "../types";
 import { initialProfile, initialPreferences } from "../data/settingsMock";
 
-// ─── Types ────────────────────────────────────────────────────
-
-// Is context mein kya permanent data rahega
+// ─── State shape ──────────────────────────────────────────────
 type WorkspaceState = {
-  profile:     SettingFormData;   // user ka naam, email, role, password
-  preferences: UserPreferences;   // theme, language, darkMode, etc.
+  profile:     SettingFormData;
+  preferences: UserPreferences;
 };
 
-// Is context mein kya functions honge
-type WorkspaceActions = {
-  // Profile update karo — sirf jo fields diye, wahi badle
+// Starting state — fresh copy banao, direct reference nahi
+// Kyun copy? Agar direct initialProfile use karein, toh ek jagah badalne se
+// doosri jagah bhi badal jaata — unsafe reference sharing
+const initialWorkspaceState: WorkspaceState = {
+  profile:     { ...initialProfile     }, // shallow copy — safe
+  preferences: { ...initialPreferences }, // shallow copy — safe
+};
+
+// ─── Actions ──────────────────────────────────────────────────
+// Har action ek named operation hai — random state mutation nahi
+// Partial<T> = us type ke kuch hi fields dene ka option
+
+type WorkspaceAction =
+  | { type: "UPDATE_PROFILE";     payload: Partial<SettingFormData> }
+  | { type: "UPDATE_PREFERENCES"; payload: Partial<UserPreferences> }
+  | { type: "RESET_PROFILE" };
+
+// ─── Reducer ──────────────────────────────────────────────────
+// Pure function — state mutate nahi karta, nayi copy banata hai
+
+function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
+  switch (action.type) {
+
+    case "UPDATE_PROFILE":
+      return {
+        ...state,                          // baaki state safe
+        profile: {
+          ...state.profile,                // purana profile copy
+          ...action.payload,               // sirf jo fields aaye wahi overwrite
+        },
+      };
+      // Example: payload = { name: "Ravi" }
+      // result.profile = { name: "Ravi", email: "old", role: "old", password: "old" }
+
+    case "UPDATE_PREFERENCES":
+      return {
+        ...state,
+        preferences: {
+          ...state.preferences,            // purani preferences copy
+          ...action.payload,               // sirf jo fields aaye wahi overwrite
+        },
+      };
+
+    case "RESET_PROFILE":
+      return {
+        ...state,
+        // Fresh copy banao — initialProfile ka direct reference nahi
+        // Agar direct dete: state.profile === initialProfile (same object)
+        // Reset ke baad profile change karte toh initialProfile bhi change ho jaata
+        profile: { ...initialProfile },
+      };
+
+    default:
+      return state;
+  }
+}
+
+// ─── Context ──────────────────────────────────────────────────
+type WorkspaceContextType = WorkspaceState & {
   updateProfile:     (data: Partial<SettingFormData>) => void;
-  // Preferences update karo — sirf jo fields diye, wahi badle
   updatePreferences: (data: Partial<UserPreferences>) => void;
-  // Sab kuch original data pe reset karo
   resetProfile:      () => void;
 };
 
-type WorkspaceContextType = WorkspaceState & WorkspaceActions;
-
-// ─── Context banana ───────────────────────────────────────────
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
 
 // ─── Provider ─────────────────────────────────────────────────
+export const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
 
-type WorkspaceProviderProps = {
-  children: React.ReactNode;
-};
+  const [state, dispatch] = useReducer(workspaceReducer, initialWorkspaceState);
 
-export const WorkspaceProvider = ({ children }: WorkspaceProviderProps) => {
+  // Clean action dispatch functions — components ko reducer pata nahi hoga
+  const updateProfile     = (data: Partial<SettingFormData>) =>
+    dispatch({ type: "UPDATE_PROFILE",     payload: data });
 
-  // Permanent data — mock data se initialize (real app mein API se aata)
-  const [profile,     setProfile]     = useState<SettingFormData>(initialProfile);
-  const [preferences, setPreferences] = useState<UserPreferences>(initialPreferences);
+  const updatePreferences = (data: Partial<UserPreferences>) =>
+    dispatch({ type: "UPDATE_PREFERENCES", payload: data });
 
-  // Profile ke kuch fields update karo
-  // Partial<SettingFormData> = sirf kuch fields dene ka option — sab mandatory nahi
-  const updateProfile = (data: Partial<SettingFormData>) => {
-    setProfile(prev => ({ ...prev, ...data }));
-    //                    ↑ purana data raho  ↑ naye fields se overwrite karo
-  };
-
-  // Preferences ke kuch fields update karo
-  const updatePreferences = (data: Partial<UserPreferences>) => {
-    setPreferences(prev => ({ ...prev, ...data }));
-  };
-
-  // Sab kuch original mock data pe wapas
-  const resetProfile = () => {
-    setProfile(initialProfile);
-  };
+  const resetProfile = () =>
+    dispatch({ type: "RESET_PROFILE" });
 
   return (
     <WorkspaceContext.Provider value={{
-      profile,
-      preferences,
+      ...state,
       updateProfile,
       updatePreferences,
       resetProfile,
@@ -67,8 +101,7 @@ export const WorkspaceProvider = ({ children }: WorkspaceProviderProps) => {
   );
 };
 
-// ─── Custom Hook ──────────────────────────────────────────────
-
+// ─── Hook ─────────────────────────────────────────────────────
 export const useWorkspace = (): WorkspaceContextType => {
   const ctx = useContext(WorkspaceContext);
   if (!ctx) throw new Error("useWorkspace must be used inside <WorkspaceProvider>");
