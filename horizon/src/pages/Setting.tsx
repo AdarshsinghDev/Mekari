@@ -3,126 +3,103 @@ import { useSearchParams } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import WorkspaceCard from "../components/WorkspaceCard";
+import { useWorkspace } from "../context/WorkspaceContext";
 import type { ThemeType, LanguageType, SelectOption } from "../types";
-import {
-  initialProfile,
-  initialPreferences,
-  themeOptions,
-  languageOptions,
-  timezoneOptions,
-} from "../data/settingsMock";
+import { themeOptions, languageOptions, timezoneOptions } from "../data/settingsMock";
 
-// ─── Tab Configuration ────────────────────────────────────────
-const TABS = [
+// ─── Tab config ───────────────────────────────────────────────
+const TABS         = [
   { id: "profile",     label: "Profile"     },
   { id: "appearance",  label: "Appearance"  },
   { id: "preferences", label: "Preferences" },
 ];
-
-// Valid tab IDs
 const VALID_TAB_IDS = TABS.map(t => t.id);
 const DEFAULT_TAB   = "profile";
 
 // ─── Validators ───────────────────────────────────────────────
-const isValidName     = (val: string): boolean => val.length === 0 || val.length >= 3;
-const isValidEmail    = (val: string): boolean => val.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-const isValidPassword = (val: string): boolean => val.length === 0 || (val.length >= 8 && /[0-9]/.test(val) && /[A-Z]/.test(val));
+const isValidName     = (v: string) => v.length === 0 || v.length >= 3;
+const isValidEmail    = (v: string) => v.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const isValidPassword = (v: string) => v.length === 0 || (v.length >= 8 && /[0-9]/.test(v) && /[A-Z]/.test(v));
 
 // ─── Component ────────────────────────────────────────────────
 const Setting = () => {
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  // WorkspaceContext se permanent data lo
+  const { profile, preferences, updateProfile, updatePreferences, resetProfile } = useWorkspace();
 
-  // URL se tab nikalo
+  // ── URL tab ──────────────────────────────────────────────────
+  const [searchParams, setSearchParams] = useSearchParams();
   const tabFromURL = searchParams.get("tab");
 
+  // Invalid/missing tab → default pe redirect
   useEffect(() => {
-    if (!tabFromURL) {
+    if (!tabFromURL || !VALID_TAB_IDS.includes(tabFromURL)) {
       setSearchParams({ tab: DEFAULT_TAB }, { replace: true });
-      return;
-    }
-
-    if (!VALID_TAB_IDS.includes(tabFromURL)) {
-      setSearchParams({ tab: DEFAULT_TAB }, { replace: true });
-      return;
     }
   }, [tabFromURL, setSearchParams]);
 
-  // Active tab — validated
   const activeTab = VALID_TAB_IDS.includes(tabFromURL || "") ? tabFromURL! : DEFAULT_TAB;
 
-  // ── Tab change handler ───────────────────────────────────────
-  const handleTabClick = useCallback((tabId: string): void => {
+  const handleTabClick = useCallback((tabId: string) => {
     setSearchParams({ tab: tabId });
   }, [setSearchParams]);
 
-  // ── Profile state ────────────────────────────────────────────
-  const [name,     setName]     = useState(initialProfile.name);
-  const [email,    setEmail]    = useState(initialProfile.email);
-  const [role,     setRole]     = useState(initialProfile.role);
-  const [password, setPassword] = useState(initialProfile.password);
-
+  // ── Local form state ─────────────────────────────────────────
+  // Yeh temporary hai — sirf form ke liye (touched state)
+  // Permanent data context mein hai
   const [nameTouched,     setNameTouched]     = useState(false);
   const [emailTouched,    setEmailTouched]    = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
 
-  // ── Preferences state ────────────────────────────────────────
-  const [theme,      setTheme]      = useState<ThemeType>(initialPreferences.theme);
-  const [language,   setLanguage]   = useState<LanguageType>(initialPreferences.language);
-  const [timezone,   setTimezone]   = useState(initialPreferences.timezone);
-  const [darkMode,   setDarkMode]   = useState(initialPreferences.darkMode);
-  const [emailNotif, setEmailNotif] = useState(initialPreferences.emailNotif);
-
   // ── Validation ───────────────────────────────────────────────
-  const nameOk     = isValidName(name);
-  const emailOk    = isValidEmail(email);
-  const passwordOk = isValidPassword(password);
+  const nameOk     = isValidName(profile.name);
+  const emailOk    = isValidEmail(profile.email);
+  const passwordOk = isValidPassword(profile.password);
 
-  const isFormValid = useMemo(() => {
-    return (
-      name.length > 0 && nameOk &&
-      email.length > 0 && emailOk &&
-      password.length > 0 && passwordOk
-    );
-  }, [name, email, password, nameOk, emailOk, passwordOk]);
+  const isFormValid = useMemo(() => (
+    profile.name.length > 0     && nameOk &&
+    profile.email.length > 0    && emailOk &&
+    profile.password.length > 0 && passwordOk
+  ), [profile.name, profile.email, profile.password, nameOk, emailOk, passwordOk]);
 
   // ── Handlers ─────────────────────────────────────────────────
-  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>): void => {
+
+  // Form submit — context mein data save hoga
+  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setNameTouched(true);
     setEmailTouched(true);
     setPasswordTouched(true);
     if (!nameOk || !emailOk || !passwordOk) return;
-    console.log({ name, email, role, password, theme, language, timezone, darkMode, emailNotif });
-  }, [name, email, role, password, theme, language, timezone, darkMode, emailNotif, nameOk, emailOk, passwordOk]);
+    console.log("Saved:", { ...profile, ...preferences });
+  }, [profile, preferences, nameOk, emailOk, passwordOk]);
 
-  const handleReset = useCallback((_e: React.MouseEvent<HTMLButtonElement>): void => {
-    setName(initialProfile.name);
-    setEmail(initialProfile.email);
-    setRole(initialProfile.role);
-    setPassword(initialProfile.password);
+  // Reset — context ka resetProfile call karo
+  const handleReset = useCallback((_e: React.MouseEvent<HTMLButtonElement>) => {
+    resetProfile();
     setNameTouched(false);
     setEmailTouched(false);
     setPasswordTouched(false);
-  }, []);
+  }, [resetProfile]);
 
-  const handleNameChange     = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => { setName(e.target.value);     }, []);
-  const handleEmailChange    = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => { setEmail(e.target.value);    }, []);
-  const handleRoleChange     = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => { setRole(e.target.value);     }, []);
-  const handlePasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => { setPassword(e.target.value); }, []);
+  // Profile field change — context update
+  const handleNameChange     = useCallback((e: React.ChangeEvent<HTMLInputElement>) => updateProfile({ name:     e.target.value }), [updateProfile]);
+  const handleEmailChange    = useCallback((e: React.ChangeEvent<HTMLInputElement>) => updateProfile({ email:    e.target.value }), [updateProfile]);
+  const handleRoleChange     = useCallback((e: React.ChangeEvent<HTMLInputElement>) => updateProfile({ role:     e.target.value }), [updateProfile]);
+  const handlePasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => updateProfile({ password: e.target.value }), [updateProfile]);
 
-  const handleNameBlur     = useCallback((): void => { setNameTouched(true);     }, []);
-  const handleEmailBlur    = useCallback((): void => { setEmailTouched(true);    }, []);
-  const handlePasswordBlur = useCallback((): void => { setPasswordTouched(true); }, []);
+  const handleNameBlur     = useCallback(() => setNameTouched(true),     []);
+  const handleEmailBlur    = useCallback(() => setEmailTouched(true),    []);
+  const handlePasswordBlur = useCallback(() => setPasswordTouched(true), []);
 
-  const handleThemeChange    = useCallback((e: React.ChangeEvent<HTMLSelectElement>): void => { setTheme(e.target.value as ThemeType);       }, []);
-  const handleLanguageChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>): void => { setLanguage(e.target.value as LanguageType); }, []);
-  const handleTimezoneChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>): void => { setTimezone(e.target.value);                 }, []);
+  // Preferences change — context update
+  const handleThemeChange    = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => updatePreferences({ theme:    e.target.value as ThemeType    }), [updatePreferences]);
+  const handleLanguageChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => updatePreferences({ language: e.target.value as LanguageType }), [updatePreferences]);
+  const handleTimezoneChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => updatePreferences({ timezone: e.target.value                  }), [updatePreferences]);
+  const handleDarkModeToggle   = useCallback((_e: React.MouseEvent<HTMLButtonElement>) => updatePreferences({ darkMode:   !preferences.darkMode      }), [updatePreferences, preferences.darkMode]);
+  const handleEmailNotifChange = useCallback((e: React.ChangeEvent<HTMLInputElement>)  => updatePreferences({ emailNotif: e.target.checked           }), [updatePreferences]);
 
-  const handleDarkModeToggle   = useCallback((_e: React.MouseEvent<HTMLButtonElement>): void => { setDarkMode(prev => !prev);     }, []);
-  const handleEmailNotifChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void  => { setEmailNotif(e.target.checked); }, []);
-
-  // ── useMemo — dropdown options ────────────────────────────────
+  // ── Dropdown JSX (memoized) ───────────────────────────────────
   const themeOptionElements    = useMemo(() => themeOptions.map((o: SelectOption)    => <option key={o.value} value={o.value}>{o.label}</option>), []);
   const languageOptionElements = useMemo(() => languageOptions.map((o: SelectOption) => <option key={o.value} value={o.value}>{o.label}</option>), []);
   const timezoneOptionElements = useMemo(() => timezoneOptions.map((o: SelectOption) => <option key={o.value} value={o.value}>{o.label}</option>), []);
@@ -156,35 +133,35 @@ const Setting = () => {
 
       <form onSubmit={handleSubmit} className="space-y-5">
 
-        {/* Profile tab */}
+        {/* Profile tab — data from WorkspaceContext */}
         {activeTab === "profile" && (
           <WorkspaceCard title="Profile Details">
-            <Input id="name" label="Name" type="text" value={name} onChange={handleNameChange} onBlur={handleNameBlur} placeholder="Enter your name" error={!nameOk && nameTouched ? "Name must be at least 3 characters." : undefined} />
-            <Input id="email" label="Email" type="email" value={email} onChange={handleEmailChange} onBlur={handleEmailBlur} placeholder="Enter your email" error={!emailOk && emailTouched ? "Please enter a valid email address." : undefined} />
-            <Input id="role" label="Role" type="text" value={role} onChange={handleRoleChange} placeholder="e.g. Developer, Designer" />
-            <Input id="password" label="Password" type="password" value={password} onChange={handlePasswordChange} onBlur={handlePasswordBlur} placeholder="Min 8 chars, 1 number, 1 uppercase" error={!passwordOk && passwordTouched ? "Min 8 characters, at least 1 uppercase and 1 number." : undefined} />
+            <Input id="name"     label="Name"     type="text"     value={profile.name}     onChange={handleNameChange}     onBlur={handleNameBlur}     placeholder="Enter your name"    error={!nameOk     && nameTouched     ? "Name must be at least 3 characters."                       : undefined} />
+            <Input id="email"    label="Email"    type="email"    value={profile.email}    onChange={handleEmailChange}    onBlur={handleEmailBlur}    placeholder="Enter your email"   error={!emailOk    && emailTouched    ? "Please enter a valid email address."                       : undefined} />
+            <Input id="role"     label="Role"     type="text"     value={profile.role}     onChange={handleRoleChange}                                 placeholder="e.g. Developer, Designer" />
+            <Input id="password" label="Password" type="password" value={profile.password} onChange={handlePasswordChange} onBlur={handlePasswordBlur} placeholder="Min 8 chars, 1 number, 1 uppercase" error={!passwordOk && passwordTouched ? "Min 8 characters, at least 1 uppercase and 1 number." : undefined} />
           </WorkspaceCard>
         )}
 
-        {/* Appearance tab */}
+        {/* Appearance tab — data from WorkspaceContext */}
         {activeTab === "appearance" && (
           <WorkspaceCard title="Appearance & Locale">
             <div className="space-y-1">
               <label htmlFor="theme" className="text-xs font-medium text-slate-500">Theme</label>
-              <select id="theme" value={theme} onChange={handleThemeChange} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer">{themeOptionElements}</select>
+              <select id="theme" value={preferences.theme} onChange={handleThemeChange} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer">{themeOptionElements}</select>
             </div>
             <div className="space-y-1">
               <label htmlFor="language" className="text-xs font-medium text-slate-500">Language</label>
-              <select id="language" value={language} onChange={handleLanguageChange} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer">{languageOptionElements}</select>
+              <select id="language" value={preferences.language} onChange={handleLanguageChange} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer">{languageOptionElements}</select>
             </div>
             <div className="space-y-1">
               <label htmlFor="timezone" className="text-xs font-medium text-slate-500">Timezone</label>
-              <select id="timezone" value={timezone} onChange={handleTimezoneChange} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer">{timezoneOptionElements}</select>
+              <select id="timezone" value={preferences.timezone} onChange={handleTimezoneChange} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 bg-white text-slate-700 cursor-pointer">{timezoneOptionElements}</select>
             </div>
           </WorkspaceCard>
         )}
 
-        {/* Preferences tab */}
+        {/* Preferences tab — data from WorkspaceContext */}
         {activeTab === "preferences" && (
           <WorkspaceCard title="Preferences">
             <div className="flex items-center justify-between">
@@ -192,20 +169,20 @@ const Setting = () => {
                 <p className="text-sm font-medium text-slate-700">Dark Mode</p>
                 <p className="text-xs text-slate-400">Switch to dark theme</p>
               </div>
-              <button type="button" onClick={handleDarkModeToggle} aria-pressed={darkMode} className={`relative w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer ${darkMode ? "bg-blue-600" : "bg-slate-200"}`}>
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${darkMode ? "translate-x-5" : "translate-x-0"}`} />
+              <button type="button" onClick={handleDarkModeToggle} aria-pressed={preferences.darkMode} className={`relative w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer ${preferences.darkMode ? "bg-blue-600" : "bg-slate-200"}`}>
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${preferences.darkMode ? "translate-x-5" : "translate-x-0"}`} />
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <input id="emailNotif" type="checkbox" checked={emailNotif} onChange={handleEmailNotifChange} className="w-4 h-4 accent-blue-600 cursor-pointer" />
+              <input id="emailNotif" type="checkbox" checked={preferences.emailNotif} onChange={handleEmailNotifChange} className="w-4 h-4 accent-blue-600 cursor-pointer" />
               <label htmlFor="emailNotif" className="text-sm text-slate-700 cursor-pointer">Email Notifications</label>
             </div>
           </WorkspaceCard>
         )}
 
-        {/* Action buttons */}
+        {/* Buttons */}
         <div className="flex items-center gap-3">
-          <Button type="submit" variant="primary" size="medium" disabled={!isFormValid}>Save Changes</Button>
+          <Button type="submit" variant="primary"   size="medium" disabled={!isFormValid}>Save Changes</Button>
           <Button type="button" variant="secondary" size="medium" onClick={handleReset}>Reset</Button>
         </div>
 

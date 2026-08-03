@@ -1,55 +1,37 @@
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import { useUI } from "../context/UIContext";
 
-// Layout — poore app ka skeleton
-//
-// Structure:
-// ┌─────────────┬──────────────────────────┐
-// │             │  Header (freeze)          │
-// │  Sidebar    ├──────────────────────────┤
-// │  (freeze)   │  <Outlet />               │
-// │             │  (sirf yeh hissa badlta)  │
-// └─────────────┴──────────────────────────┘
-//
-// Sidebar aur Header memo wrapped hain —
-// route change hone pe sirf Outlet ka content badlta hai,
-// Sidebar aur Header dobara render NAHI hote.
+// Layout — app ka main skeleton
+// Sidebar (left) + Header (top) + Outlet (center content)
+// Sidebar/Header freeze — sirf Outlet badlta hai page change pe
 
 const Layout = () => {
 
-  // Mobile sidebar open/close state
-  const [isOpen, setIsOpen] = useState(false);
+  // UIContext se sidebar state lo — local useState nahi chahiye ab
+  const { isSidebarOpen, openSidebar, closeSidebar } = useUI();
 
-  // useCallback — stable function references
-  // memo wrapped Sidebar/Header ko naya function nahi milega har render pe
-  const handleOpen  = useCallback(() => setIsOpen(true),  []);
-  const handleClose = useCallback(() => setIsOpen(false), []);
+  const handleOpen  = useCallback(() => openSidebar(),  [openSidebar]);
+  const handleClose = useCallback(() => closeSidebar(), [closeSidebar]);
 
   return (
     <div className="flex min-h-screen min-w-[320px]">
 
-      {/* Sidebar — left panel, routes change hone pe freeze */}
-      <Sidebar isOpen={isOpen} onClose={handleClose} />
+      <Sidebar isOpen={isSidebarOpen} onClose={handleClose} />
 
-      {/* Right side — Header + main content */}
       <div className="flex flex-col flex-1 min-w-0">
-
-        {/* Header — top bar, freeze */}
         <Header onMenuClick={handleOpen} />
 
-        {/* Main content area — sirf yeh hissa badlta hai */}
-        {/* Outlet = React Router yahan active page render karta hai */}
-        {/* Dashboard page → Dashboard component */}
-        {/* Setting page  → Setting component  */}
+        {/* Sirf yeh hissa badlta hai route change pe */}
         <main className="flex-1 bg-slate-50 p-4 sm:p-6 overflow-y-auto">
           <div className="max-w-[1400px] mx-auto min-w-0">
             <Outlet />
           </div>
         </main>
-
       </div>
+
     </div>
   );
 };
