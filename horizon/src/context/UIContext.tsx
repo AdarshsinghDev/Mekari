@@ -1,4 +1,5 @@
-import { createContext, useContext, useReducer } from "react";
+import { createContext, useContext, useEffect, useReducer } from "react";
+import { logger } from "../utils/logger";
 
 // ─── State shape ──────────────────────────────────────────────
 type UIState = {
@@ -61,6 +62,15 @@ export const UIProvider = ({ children }: { children: React.ReactNode }) => {
   // state   = current UI state
   // dispatch = action bhejne ka function
   const [state, dispatch] = useReducer(uiReducer, initialUIState);
+
+  // App mount hone pe ek baar initial state log karo
+  // [] dependency = sirf ek baar chalega — mount pe
+  useEffect(() => {
+    logger.group("UIContext — Initial State");
+    logger.log("isSidebarOpen", state.isSidebarOpen);
+    logger.groupEnd();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← intentionally empty — sirf mount pe log karo
 
   // dispatch ko seedha expose nahi karte — clean functions banate hain
   const openSidebar  = () => dispatch({ type: "OPEN_SIDEBAR"  });

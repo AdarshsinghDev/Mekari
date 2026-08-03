@@ -1,6 +1,7 @@
-import { createContext, useContext, useReducer } from "react";
+import { createContext, useContext, useEffect, useReducer } from "react";
 import type { SettingFormData, UserPreferences } from "../types";
 import { initialProfile, initialPreferences } from "../data/settingsMock";
+import { logger } from "../utils/logger";
 
 // ─── State shape ──────────────────────────────────────────────
 type WorkspaceState = {
@@ -78,6 +79,15 @@ const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefin
 export const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [state, dispatch] = useReducer(workspaceReducer, initialWorkspaceState);
+
+  // App mount hone pe ek baar initial state log karo
+  useEffect(() => {
+    logger.group("WorkspaceContext — Initial State");
+    logger.log("profile",     state.profile);
+    logger.log("preferences", state.preferences);
+    logger.groupEnd();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← intentionally empty — sirf mount pe log karo
 
   // Clean action dispatch functions — components ko reducer pata nahi hoga
   const updateProfile     = (data: Partial<SettingFormData>) =>
