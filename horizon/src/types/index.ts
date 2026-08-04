@@ -64,3 +64,33 @@ export type SelectOption = {
   label: string; // User ko dikhne wala text — "Light", "Hindi"
   value: string; // Actually save hone wali value — "light", "hi"
 };
+
+// ─── Dashboard / Workspace Types ─────────────────────────────
+
+// Ek project card ka structure
+export type Project = {
+  id:          number;
+  name:        string;
+  description: string;
+  status:      "active" | "completed" | "on-hold";
+  progress:    number;   // 0-100
+  dueDate:     string;
+  team:        string[];
+};
+
+// Ek activity item ka structure (Dashboard feed)
+export type Activity = {
+  id:        number;
+  user:      string;
+  action:    string;   // "updated", "created", "deleted"
+  target:    string;   // kaunsa item pe action hua
+  timestamp: string;
+};
+
+// Analytics stats ka structure
+export type AnalyticsStat = {
+  label: string;
+  value: string;
+  change: string;   // e.g. "+12%" ya "-3%"
+  trend:  "up" | "down" | "neutral";
+};
